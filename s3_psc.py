@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from common import *
 S=json.load(open(P('sources.json'))); os.makedirs(P('psc'),exist_ok=True)
 def dl(f): download('https://download.companieshouse.gov.uk/'+f,P('psc',f),timeout=1800)
-with ThreadPoolExecutor(8) as ex: list(ex.map(dl,S['psc']['files']))
+with ThreadPoolExecutor(4) as ex: list(ex.map(dl,S['psc']['files']))
 log('PSC downloaded',len(S['psc']['files']))
 def regnorm(r):
     r=re.sub(r'[^0-9A-Z]','',str(r or '').upper()); m=re.match(r'^([A-Z]{2})?(\d+)$',r)
