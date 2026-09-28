@@ -59,7 +59,7 @@ for i in worked:
     if i in PREV and i not in NOW: items.append({'id':i,'name':PREV[i].get('name'),'src':PREV[i].get('src'),'what':['no longer on the register or below the size threshold'],'sev':3,'worked':True})
 items.sort(key=lambda x:(not x['worked'],-x['sev']))
 new=[i for i in NOW if PREV and i not in PREV]
-ch={'at':today,'prevAt':prev_ix.get('built'),'counts':{'new':len(new),'gone':len([i for i in PREV if i not in NOW]),'changed':len(items)},'items':items[:1400]}
+ch={'at':today,'prevAt':prev_ix.get('built'),'compared':bool(PREV),'counts':{'new':len(new),'gone':len([i for i in PREV if i not in NOW]),'changed':len(items)},'items':items[:1400]}
 while len(json.dumps(ch).encode())>240000: ch['items']=ch['items'][:int(len(ch['items'])*0.85)]
 json.dump(ch,open(f'{out}/{GEN}changes.json','w'),separators=(',',':'),ensure_ascii=False); writes.append(GEN+'changes')
 S=json.load(open(P('sources.json')))
@@ -76,7 +76,12 @@ for fn in writes:
     if curb and (sz+s_>900000 or len(curb)>=8): batches.append(curb); curb=[]; sz=0
     curb.append(fn); sz+=s_
 batches.append(curb)
-old=[f[:-5] for f in [os.path.basename(x) for x in glob.glob(P('prev','udir','*.json'))] if f!='index.json']
+# previous generation's documents, derived from the previous index alone (every generation doc is written once, so version 1)
+old=[]
+if prev_ix.get('chunks'):
+    old=[f"{pre}{k}{i:02d}" for i in range(int(prev_ix['chunks'])) for k in ('l','d')]
+    old+=[prev_ix.get('buyers') or 'buyers']+([prev_ix['changes']] if prev_ix.get('changes') else [])
+old=[x for x in old if not x.startswith(GEN)]
 plan={'gen':GEN,'dir':out,'batches':batches,'index':f'{out}/index.json','delete_after':sorted(old)}
 json.dump(plan,open(P('plan.json'),'w'),indent=1)
 log('publish plan',len(chunks),'chunks',len(writes),'docs',len(batches),'batches; changes',len(items),'new',len(new))
